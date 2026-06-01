@@ -5,19 +5,19 @@ SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
 
 -- -----------------------------------------------------
--- Schema mydb
+-- Schema Copa do Mundo de Futebol
 -- -----------------------------------------------------
 
 -- -----------------------------------------------------
--- Schema mydb
+-- Schema Copa do Mundo de Futebol
 -- -----------------------------------------------------
-CREATE SCHEMA IF NOT EXISTS `mydb` DEFAULT CHARACTER SET utf8 ;
-USE `mydb` ;
+CREATE SCHEMA IF NOT EXISTS `Copa do Mundo de Futebol` DEFAULT CHARACTER SET utf8 ;
+USE `Copa do Mundo de Futebol` ;
 
 -- -----------------------------------------------------
--- Table `mydb`.`selecoes`
+-- Table `Copa do Mundo de Futebol`.`selecoes`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `mydb`.`selecoes` (
+CREATE TABLE IF NOT EXISTS `Copa do Mundo de Futebol`.`selecoes` (
   `id_selecao` INT NOT NULL,
   `nome_selecao` VARCHAR(50) NOT NULL,
   `continente` VARCHAR(50) NOT NULL,
@@ -28,9 +28,9 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `mydb`.`jogadores`
+-- Table `Copa do Mundo de Futebol`.`jogadores`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `mydb`.`jogadores` (
+CREATE TABLE IF NOT EXISTS `Copa do Mundo de Futebol`.`jogadores` (
   `id_jogador` INT NOT NULL,
   `nome_jogador` VARCHAR(60) NOT NULL,
   `posicao` VARCHAR(30) NOT NULL,
@@ -41,16 +41,16 @@ CREATE TABLE IF NOT EXISTS `mydb`.`jogadores` (
   INDEX `fk_jogadores_selecoes_idx` (`id_selecao` ASC) INVISIBLE,
   CONSTRAINT `id_selecao`
     FOREIGN KEY (`id_selecao`)
-    REFERENCES `mydb`.`selecoes` (`id_selecao`)
+    REFERENCES `Copa do Mundo de Futebol`.`selecoes` (`id_selecao`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `mydb`.`estadios`
+-- Table `Copa do Mundo de Futebol`.`estadios`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `mydb`.`estadios` (
+CREATE TABLE IF NOT EXISTS `Copa do Mundo de Futebol`.`estadios` (
   `id_estadio` INT NOT NULL,
   `nome_estadio` VARCHAR(80) NOT NULL,
   `cidade` VARCHAR(50) NOT NULL,
@@ -61,9 +61,9 @@ ENGINE = InnoDB;
 
 
 -- -----------------------------------------------------
--- Table `mydb`.`partidas`
+-- Table `Copa do Mundo de Futebol`.`partidas`
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `mydb`.`partidas` (
+CREATE TABLE IF NOT EXISTS `Copa do Mundo de Futebol`.`partidas` (
   `id_partida` INT NOT NULL,
   `data_partida` DATE NOT NULL,
   `id_estadio` INT NOT NULL,
@@ -79,22 +79,22 @@ CREATE TABLE IF NOT EXISTS `mydb`.`partidas` (
   INDEX `vencedor_idx` (`vencedor` ASC) VISIBLE,
   CONSTRAINT `id_estadio`
     FOREIGN KEY (`id_estadio`)
-    REFERENCES `mydb`.`estadios` (`id_estadio`)
+    REFERENCES `Copa do Mundo de Futebol`.`estadios` (`id_estadio`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `id_selecao_1`
     FOREIGN KEY (`id_selecao_1`)
-    REFERENCES `mydb`.`selecoes` (`id_selecao`)
+    REFERENCES `Copa do Mundo de Futebol`.`selecoes` (`id_selecao`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `id_selecao_2`
     FOREIGN KEY (`id_selecao_2`)
-    REFERENCES `mydb`.`selecoes` (`id_selecao`)
+    REFERENCES `Copa do Mundo de Futebol`.`selecoes` (`id_selecao`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION,
   CONSTRAINT `vencedor`
     FOREIGN KEY (`vencedor`)
-    REFERENCES `mydb`.`selecoes` (`id_selecao`)
+    REFERENCES `Copa do Mundo de Futebol`.`selecoes` (`id_selecao`)
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
