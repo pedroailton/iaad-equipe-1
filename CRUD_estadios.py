@@ -3,7 +3,7 @@ from mysql.connector import Error
 
 # connector mysql <--> python
 def conectar():
-    return mysql.connector.connect(host="localhost", user="root", password="123123", database="Copa do Mundo de Futebol")
+    return mysql.connector.connect(host="localhost", user="root", password="senha do local host", database="Copa do Mundo de Futebol")
 
 
 # create
