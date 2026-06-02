@@ -3,7 +3,7 @@ from mysql.connector import Error
 
 # connector mysql <--> python
 def conectar():
-    return mysql.connector.connect(host="localhost", user="root", password="senha local", database="Copa do Mundo de Futebol")
+    return mysql.connector.connect(host="localhost", user="root", password="123123", database="Copa do Mundo de Futebol")
 
 
 # create
@@ -57,20 +57,50 @@ def listar_estadios():
 
 
 # update
-def atualizar_capacidade(id_estadio, nova_capacidade):
-    conexao = conectar()
-    cursor = conexao.cursor()
+def atualizar_estadio(id_estadio, **campos_atualizar):
+    if not campos_atualizar:
+        return False, "Nenhum campo foi enviado para a atualização"
     
-    sql = "UPDATE estadios SET capacidade = %s WHERE id_estadio = %s"
-    valores = (nova_capacidade, id_estadio)
+    try:
+        conexao = conectar()
+        cursor = conexao.cursor()
+
+        # montagem do SQL, transformar {'cidade': 'Nova York', 'capacidade': 90000} 
+        # em ["cidade = %s", "capacidade = %s" 
+        partes_set = []
+        valores = []
+
+        for coluna, valor in campos_atualizar.items():
+            colunas_validas = ['nome_estadio', 'cidade', 'pais', 'capacidade']
+            if coluna in colunas_validas:
+                partes_set.append(f"{coluna} = %s")
+                valores.append(valor)
+
+        if not partes_set:
+            return False, "Campos enviados não fazem parte da tabela Estadio"
+        
+        # junção das partes: "cidade = %s, capacidade = %s"
+        sql_set = ", ".join(partes_set)
+        sql = f"UPDATE estadios SET {sql_set} WHERE id_estadio = %s"
+
+        # coloca o id no final da lista de valores
+        valores.append(id_estadio)
+
+        # execução no banco
+        cursor.execute(sql, tuple(valores))
+        conexao.commit()
+
+        if cursor.rowcount == 0:
+            return False, f"Aviso: nenhum estadio foi encontrado com este ID {id_estadio}"
+        
+        return True, "Estadio atualizado"
     
-    cursor.execute(sql, valores)
-    conexao.commit()
-    
-    print(f"Capacidade do estádio ID {id_estadio} atualizada para {nova_capacidade}!")
-    
-    cursor.close()
-    conexao.close()
+    except Error as err:
+        return False, f"Erro no banco de dados: {err}"
+    finally:
+        if 'conexao' in locals() and conexao.is_connected():
+            cursor.close()
+            conexao.close()
 
 
 
@@ -105,4 +135,5 @@ def deletar_estadio(id_estadio):
         if 'conexao' in locals() and conexao.is_connected(): 
             cursor.close()
             conexao.close()
+
 
