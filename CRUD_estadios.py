@@ -106,15 +106,3 @@ def deletar_estadio(id_estadio):
             cursor.close()
             conexao.close()
 
-
-# ==========================================
-# TESTANDO O CRUD
-# ==========================================
-if __name__ == "__main__":
-    #inserir_estadio(17, "teste", "Rio de teste", "Brasil", 78838)
-    
-    listar_estadios()
-    
-    #atualizar_capacidade(1, 80000)
-    
-    #deletar_estadio(17)
