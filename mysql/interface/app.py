@@ -8,11 +8,14 @@ from streamlit_option_menu import option_menu
 mysql_dir = Path(__file__).resolve().parent.parent
 cruds_dir = str(mysql_dir / "cruds")
 interface_dir = str(mysql_dir / "interface")
+raiz_dir = str(mysql_dir)
 
 if cruds_dir not in sys.path:
     sys.path.insert(0, cruds_dir)
 if interface_dir not in sys.path:
     sys.path.insert(0, interface_dir)
+if raiz_dir not in sys.path:
+    sys.path.insert(0, raiz_dir)
 
 import conexao
 st.error(f"O ARQUIVO CONEXAO QUE ESTOU RODANDO É: {conexao.__file__}")
@@ -22,6 +25,7 @@ from views.estadios import render_estadios_page
 from views.jogadores import render_jogadores_page
 from views.partidas import render_partidas_page
 from views.selecoes import render_selecoes_page
+from extras.consulta_media_idades import carregar_dados_idade
 
 # ==========================================
 # 1. CONFIGURAÇÕES INICIAIS E UI/UX (CSS)
@@ -39,6 +43,23 @@ def load_css(file_name):
     except FileNotFoundError:
         st.error(f"Erro: O arquivo de estilização '{file_name}' não foi encontrado.")
 
+
+# ==========================================
+# 2. MODAL FLUTUANTE DE ANÁLISE
+# ==========================================
+@st.dialog("Análise de Idades", width="large")
+def modal_analise_idades():
+    st.write("Confira a média de idade dos jogadores convocados por cada seleção.")
+    
+    df_idades = carregar_dados_idade()
+    
+    if df_idades is not None and not df_idades.empty:
+        # Exibe o dataframe
+        st.table(df_idades)
+    else:
+        st.warning("Não foi possível carregar os dados no momento.")
+
+
 def main():
     base_dir = Path(__file__).resolve().parent
     load_css(base_dir / "assets" / "styles.css")
@@ -53,6 +74,13 @@ def main():
         """,
         unsafe_allow_html=True,
     )
+
+    # Botão consulta media das idades
+    if st.button("Ver Média de Idades das Seleções", use_container_width=False, type="primary"):
+        modal_analise_idades()
+    
+    st.write("") # quebra de linha
+    # -----------------------------------------------------------------
 
     # Navbar horizontal moderna usando streamlit-option-menu
     selected = option_menu(
