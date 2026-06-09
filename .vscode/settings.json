@@ -1,0 +1,6 @@
+{
+    "python.analysis.extraPaths": [
+        "mysql/cruds",
+        "mysql/interface"
+    ]
+}

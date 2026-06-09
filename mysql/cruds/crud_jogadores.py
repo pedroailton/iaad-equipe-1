@@ -1,169 +1,141 @@
-import streamlit as st
 import mysql.connector
-import pandas as pd
-from datetime import datetime
+from mysql.connector import Error
+from conexao import conectar
 
-# configuração e conexão com o banco de dados
-st.set_page_config(page_title="Gestão de Jogadores - Copa do Mundo", page_icon="⚽", layout="wide")
+# Posições válidas conforme o banco de dados
+POSICOES_VALIDAS = ["Goleiro", "Defensor", "Meio-campo", "Atacante"]
 
-@st.cache_resource
-def conectar_banco():
-    conexao = mysql.connector.connect(
-        host="localhost",
-        user="root",              # nome de usuário do workbench
-        password="",      # senha do workbench
-        database="Copa do Mundo de Futebol" # nome exato com espaços do script
-    )
-    return conexao
 
-conexao = conectar_banco()
-cursor = conexao.cursor(dictionary=True)
+# CREATE
+def inserir_jogador(nome_jogador, posicao, numero_camisa, data_nascimento, id_selecao):
+    """Insere um novo jogador. O ID é gerado automaticamente (AUTO_INCREMENT)."""
+    conexao = None
+    try:
+        conexao = conectar()
+        cursor = conexao.cursor(dictionary=True)
 
-# funções auxiliares (buscar chaves estrangeiras)
-def buscar_selecoes():
-    cursor.execute("SELECT id_selecao, nome_selecao FROM selecoes")
-    return cursor.fetchall()
+        sql = """INSERT INTO jogadores (nome_jogador, posicao, numero_camisa, data_nascimento, id_selecao) 
+                 VALUES (%s, %s, %s, %s, %s)"""
+        cursor.execute(sql, (nome_jogador, posicao, numero_camisa, data_nascimento, id_selecao))
+        conexao.commit()
 
-# interface e lógica do crud
-st.title("Jogadores")
-st.sidebar.header("Navegação")
-menu = st.sidebar.radio("Escolha a operação:", ["Visualizar", "Cadastrar", "Atualizar", "Deletar"])
+        return True, f'Jogador "{nome_jogador}" cadastrado com sucesso!'
 
-# padronização global das posições aceitas na interface
-OPCOES_POSICOES = ["Goleiro", "Zagueiro", "Lateral", "Meio-Campista", "Atacante"]
+    except mysql.connector.IntegrityError as erro:
+        if erro.errno == 1062:
+            return False, "Já existe um jogador com este ID cadastrado."
+        elif erro.errno == 1452:
+            return False, "A seleção informada não existe no banco de dados."
+        return False, f"Erro de integridade: {erro}"
+    except Error as erro:
+        return False, f"Erro no banco de dados: {erro}"
+    except Exception as erro:
+        return False, f"Erro de conexão: {erro}"
+    finally:
+        if conexao is not None and conexao.is_connected():
+            cursor.close()
+            conexao.close()
 
-# read - visualizar jogadores
-if menu == "Visualizar":
-    st.subheader("Lista de Jogadores Cadastrados")
-    
-    query = """
-        SELECT j.id_jogador, j.nome_jogador, j.posicao, j.numero_camisa, j.data_nascimento, s.nome_selecao 
-        FROM jogadores j
-        LEFT JOIN selecoes s ON j.id_selecao = s.id_selecao
-    """
-    cursor.execute(query)
-    jogadores = cursor.fetchall()
-    
-    if jogadores:
-        df = pd.DataFrame(jogadores)
-        df.columns = ["ID", "Nome do Jogador", "Posição", "Camisa", "Data de Nascimento", "Seleção"]
-        # formata a data para o padrão brasileiro na exibição da tabela
-        df["Data de Nascimento"] = pd.to_datetime(df["Data de Nascimento"]).dt.strftime('%d/%m/%Y')
-        st.dataframe(df, use_container_width=True)
-    else:
-        st.info("Nenhum jogador cadastrado ainda.")
 
-# create - cadastrar novo jogador
-elif menu == "Cadastrar":
-    st.subheader("Cadastrar Novo Jogador")
-    
-    lista_selecoes = buscar_selecoes()
-    opcoes_selecoes = {s['nome_selecao']: s['id_selecao'] for s in lista_selecoes}
-    
-    with st.form(key="form_cadastro"):
-        id_jogador = st.number_input("ID do Jogador (Chave Primária)", min_value=1, step=1)
-        nome_jogador = st.text_input("Nome do Jogador")
-        posicao = st.selectbox("Posição", OPCOES_POSICOES)
-        numero_camisa = st.number_input("Número da Camisa", min_value=1, max_value=99, step=1)
-        data_nasc = st.date_input("Data de Nascimento", min_value=datetime(1980, 1, 1))
-        selecao_escolhida = st.selectbox("Seleção", list(opcoes_selecoes.keys()))
-        
-        submit_button = st.form_submit_button(label="Salvar Jogador")
-        
-        if submit_button:
-            id_selecao = opcoes_selecoes[selecao_escolhida]
-            sql = """INSERT INTO jogadores (id_jogador, nome_jogador, posicao, numero_camisa, data_nascimento, id_selecao) 
-                     VALUES (%s, %s, %s, %s, %s, %s)"""
-            valores = (id_jogador, nome_jogador, posicao, numero_camisa, data_nasc, id_selecao)
-            
-            try:
-                cursor.execute(sql, valores)
-                conexao.commit()
-                st.success(f"Jogador {nome_jogador} cadastrado com sucesso!")
-            except mysql.connector.Error as err:
-                st.error(f"Erro do MySQL: {err}")
+# READ
+def listar_jogadores():
+    """Retorna todos os jogadores com o nome da seleção (JOIN)."""
+    conexao = None
+    try:
+        conexao = conectar()
+        cursor = conexao.cursor(dictionary=True)
 
-# update - atualizar jogador existente
-elif menu == "Atualizar":
-    st.subheader("Atualizar Dados do Jogador")
-    
-    cursor.execute("SELECT id_jogador, nome_jogador FROM jogadores")
-    jogadores = cursor.fetchall()
-    
-    if jogadores:
-        opcoes_jogadores = {f"{j['id_jogador']} - {j['nome_jogador']}": j['id_jogador'] for j in jogadores}
-        jogador_escolhido = st.selectbox("Selecione o Jogador para alterar:", list(opcoes_jogadores.keys()))
-        id_jogador = opcoes_jogadores[jogador_escolhido]
-        
-        cursor.execute("SELECT * FROM jogadores WHERE id_jogador = %s", (id_jogador,))
-        dados_atuais = cursor.fetchone()
-        
-        lista_selecoes = buscar_selecoes()
-        opcoes_selecoes = {s['nome_selecao']: s['id_selecao'] for s in lista_selecoes}
-        
-        nome_selecao_atual = next((nome for nome, id_sel in opcoes_selecoes.items() if id_sel == dados_atuais['id_selecao']), list(opcoes_selecoes.keys())[0])
-        indice_selecao = list(opcoes_selecoes.keys()).index(nome_selecao_atual)
-        
-        # box de tratamento da posição do banco
-        posicao_banco = str(dados_atuais['posicao']).strip().capitalize()
-        
-        if posicao_banco == "Meio-campo":
-            posicao_banco = "Meio-Campista"
-            
-        if posicao_banco in OPCOES_POSICOES:
-            indice_posicao = OPCOES_POSICOES.index(posicao_banco)
-        else:
-            indice_posicao = 0
-        
-        with st.form(key="form_atualizacao"):
-            novo_nome = st.text_input("Nome do Jogador", value=dados_atuais['nome_jogador'])
-            nova_posicao = st.selectbox("Posição", OPCOES_POSICOES, index=indice_posicao)
-            nova_camisa = st.number_input("Número da Camisa", min_value=1, max_value=99, value=int(dados_atuais['numero_camisa']))
-            nova_data = st.date_input("Data de Nascimento", value=dados_atuais['data_nascimento'])
-            nova_selecao = st.selectbox("Seleção", list(opcoes_selecoes.keys()), index=indice_selecao)
-            
-            btn_atualizar = st.form_submit_button(label="Atualizar Dados")
-            
-            if btn_atualizar:
-                novo_id_selecao = opcoes_selecoes[nova_selecao]
-                sql = """UPDATE jogadores 
-                         SET nome_jogador = %s, posicao = %s, numero_camisa = %s, data_nascimento = %s, id_selecao = %s 
-                         WHERE id_jogador = %s"""
-                valores = (novo_nome, nova_posicao, nova_camisa, nova_data, novo_id_selecao, id_jogador)
-                
-                try:
-                    cursor.execute(sql, valores)
-                    conexao.commit()
+        sql = """
+            SELECT j.id_jogador, j.nome_jogador, j.posicao, j.numero_camisa, 
+                   j.data_nascimento, j.id_selecao, s.nome_selecao
+            FROM jogadores j
+            LEFT JOIN selecoes s ON j.id_selecao = s.id_selecao
+            ORDER BY j.id_selecao, j.id_jogador
+        """
+        cursor.execute(sql)
+        resultado = cursor.fetchall()
 
-                    # usando st.success igual ao cadastrar
-                    st.success(f"Dados de {novo_nome} atualizados com sucesso!")
-                except mysql.connector.Error as err:
-                    st.error(f"Erro do MySQL: {err}")
-    else:
-        st.warning("Nenhum jogador cadastrado para atualizar.")
+        return True, resultado
 
-# delete - deletar jogador
-elif menu == "Deletar":
-    st.subheader("Deletar Jogador")
-    
-    cursor.execute("SELECT id_jogador, nome_jogador FROM jogadores")
-    jogadores = cursor.fetchall()
-    
-    if jogadores:
-        opcoes_jogadores = {f"{j['id_jogador']} - {j['nome_jogador']}": j['id_jogador'] for j in jogadores}
-        jogador_escolhido = st.selectbox("Selecione o Jogador para remover:", list(opcoes_jogadores.keys()))
-        
-        if st.button("Confirmar Exclusão"):
-            id_jogador = opcoes_jogadores[jogador_escolhido]
-            sql = "DELETE FROM jogadores WHERE id_jogador = %s"
-            
-            try:
-                cursor.execute(sql, (id_jogador,))
-                conexao.commit()
-                
-                # usando st.success igual ao cadastrar
-                st.success("Jogador excluído com sucesso!")
-            except mysql.connector.Error as err:
-                st.error(f"Erro do MySQL: {err}")
-    else:
-        st.warning("Nenhum jogador cadastrado para deletar.")
+    except Error as erro:
+        return False, f"Erro no banco de dados: {erro}"
+    except Exception as erro:
+        return False, f"Erro de conexão: {erro}"
+    finally:
+        if conexao is not None and conexao.is_connected():
+            cursor.close()
+            conexao.close()
+
+
+# UPDATE
+def atualizar_jogador(id_jogador, **campos_atualizar):
+    """Atualiza campos de um jogador. Campos válidos: nome_jogador, posicao, numero_camisa, data_nascimento, id_selecao."""
+    if not campos_atualizar:
+        return False, "Nenhum campo foi enviado para atualização."
+
+    conexao = None
+    try:
+        conexao = conectar()
+        cursor = conexao.cursor(dictionary=True)
+
+        colunas_validas = ["nome_jogador", "posicao", "numero_camisa", "data_nascimento", "id_selecao"]
+        partes_set = []
+        valores = []
+
+        for coluna, valor in campos_atualizar.items():
+            if coluna in colunas_validas:
+                partes_set.append(f"{coluna} = %s")
+                valores.append(valor)
+
+        if not partes_set:
+            return False, "Campos enviados não pertencem à tabela 'jogadores'."
+
+        sql = f"UPDATE jogadores SET {', '.join(partes_set)} WHERE id_jogador = %s"
+        valores.append(id_jogador)
+
+        cursor.execute(sql, tuple(valores))
+        conexao.commit()
+
+        if cursor.rowcount == 0:
+            return False, f"Nenhum jogador encontrado com o ID {id_jogador}."
+
+        return True, "Jogador atualizado com sucesso!"
+
+    except mysql.connector.IntegrityError as erro:
+        if erro.errno == 1452:
+            return False, "A seleção informada não existe no banco de dados."
+        return False, f"Erro de integridade: {erro}"
+    except Error as erro:
+        return False, f"Erro no banco de dados: {erro}"
+    except Exception as erro:
+        return False, f"Erro de conexão: {erro}"
+    finally:
+        if conexao is not None and conexao.is_connected():
+            cursor.close()
+            conexao.close()
+
+
+# DELETE
+def deletar_jogador(id_jogador):
+    """Remove um jogador pelo ID."""
+    conexao = None
+    try:
+        conexao = conectar()
+        cursor = conexao.cursor(dictionary=True)
+
+        cursor.execute("DELETE FROM jogadores WHERE id_jogador = %s", (id_jogador,))
+        conexao.commit()
+
+        if cursor.rowcount == 0:
+            return False, f"Nenhum jogador encontrado com o ID {id_jogador}."
+
+        return True, f"Jogador de ID {id_jogador} deletado com sucesso!"
+
+    except Error as erro:
+        return False, f"Erro no banco de dados: {erro}"
+    except Exception as erro:
+        return False, f"Erro de conexão: {erro}"
+    finally:
+        if conexao is not None and conexao.is_connected():
+            cursor.close()
+            conexao.close()

@@ -1,139 +1,128 @@
 import mysql.connector
 from mysql.connector import Error
-
-# connector mysql <--> python
-def conectar():
-    return mysql.connector.connect(host="localhost", user="root", password="senha do local host", database="Copa do Mundo de Futebol")
+from conexao import conectar
 
 
-# create
-def inserir_estadio(id_estadio, nome, cidade, pais, capacidade):
+# CREATE
+def inserir_estadio(nome_estadio, cidade, pais, capacidade):
+    """Insere um novo estádio. O ID é gerado automaticamente (AUTO_INCREMENT)."""
     try:
         conexao = conectar()
-        cursor = conexao.cursor()
-        
-        sql = "INSERT INTO estadios (id_estadio, nome_estadio, cidade, pais, capacidade) VALUES (%s, %s, %s, %s, %s)"
-        
-        valores = (id_estadio, nome, cidade, pais, capacidade)
-        
-        cursor.execute(sql, valores)
+        cursor = conexao.cursor(dictionary=True)
+
+        sql = """INSERT INTO estadios (nome_estadio, cidade, pais, capacidade) 
+                 VALUES (%s, %s, %s, %s)"""
+        cursor.execute(sql, (nome_estadio, cidade, pais, capacidade))
         conexao.commit()
-        
-        return True, f"Estádio '{nome}' inserido"
-    
-    # tratamento do erro de integridade
+
+        return True, f'Estádio "{nome_estadio}" cadastrado com sucesso!'
+
     except mysql.connector.IntegrityError as erro:
         if erro.errno == 1062:
-            return False, f"Erro: Já existe um estádio com o ID {id_estadio} cadastrado."
-        else:
-            return False, f"Erro de integridade no banco: {erro}"
-    # erros genericos
+            return False, "Já existe um estádio com este ID cadastrado."
+        return False, f"Erro de integridade: {erro}"
     except Error as erro:
         return False, f"Erro no banco de dados: {erro}"
-
+    except Exception as erro:
+        return False, f"Erro de conexão: {erro}"
     finally:
-        if 'conexao' in locals() and conexao.is_connected():
+        if conexao is not None and conexao.is_connected():
             cursor.close()
             conexao.close()
 
 
-# read
+# READ
 def listar_estadios():
-    conexao = conectar()
-    cursor = conexao.cursor()
-    
-    sql = "SELECT * FROM estadios"
-    cursor.execute(sql)
-    
-    resultados = cursor.fetchall()
-    
-    print("\nLista de Estádios ")
-    for estadio in resultados:
-        print(f"ID: {estadio[0]} | Nome: {estadio[1]} | Local: {estadio[2]} - {estadio[3]} | Capacidade: {estadio[4]}")
-        
-    cursor.close()
-    conexao.close()
-
-
-
-# update
-def atualizar_estadio(id_estadio, **campos_atualizar):
-    if not campos_atualizar:
-        return False, "Nenhum campo foi enviado para a atualização"
-    
+    """Retorna todos os estádios cadastrados como lista de dicionários."""
+    conexao = None
     try:
         conexao = conectar()
-        cursor = conexao.cursor()
+        cursor = conexao.cursor(dictionary=True)
 
-        # montagem do SQL, transformar {'cidade': 'Nova York', 'capacidade': 90000} 
-        # em ["cidade = %s", "capacidade = %s" 
+        cursor.execute("SELECT * FROM estadios ORDER BY id_estadio")
+        resultado = cursor.fetchall()
+
+        return True, resultado
+
+    except Error as erro:
+        return False, f"Erro no banco de dados: {erro}"
+    except Exception as erro:
+        return False, f"Erro de conexão: {erro}"
+    finally:
+        if conexao is not None and conexao.is_connected():
+            cursor.close()
+            conexao.close()
+
+
+# UPDATE
+def atualizar_estadio(id_estadio, **campos_atualizar):
+    """Atualiza campos de um estádio. Campos válidos: nome_estadio, cidade, pais, capacidade."""
+    if not campos_atualizar:
+        return False, "Nenhum campo foi enviado para atualização."
+
+    conexao = None
+    try:
+        conexao = conectar()
+        cursor = conexao.cursor(dictionary=True)
+
+        colunas_validas = ["nome_estadio", "cidade", "pais", "capacidade"]
         partes_set = []
         valores = []
 
         for coluna, valor in campos_atualizar.items():
-            colunas_validas = ['nome_estadio', 'cidade', 'pais', 'capacidade']
             if coluna in colunas_validas:
                 partes_set.append(f"{coluna} = %s")
                 valores.append(valor)
 
         if not partes_set:
-            return False, "Campos enviados não fazem parte da tabela Estadio"
-        
-        # junção das partes: "cidade = %s, capacidade = %s"
-        sql_set = ", ".join(partes_set)
-        sql = f"UPDATE estadios SET {sql_set} WHERE id_estadio = %s"
+            return False, "Campos enviados não pertencem à tabela 'estadios'."
 
-        # coloca o id no final da lista de valores
+        sql = f"UPDATE estadios SET {', '.join(partes_set)} WHERE id_estadio = %s"
         valores.append(id_estadio)
 
-        # execução no banco
         cursor.execute(sql, tuple(valores))
         conexao.commit()
 
         if cursor.rowcount == 0:
-            return False, f"Aviso: nenhum estadio foi encontrado com este ID {id_estadio}"
-        
-        return True, "Estadio atualizado"
-    
-    except Error as err:
-        return False, f"Erro no banco de dados: {err}"
+            return False, f"Nenhum estádio encontrado com o ID {id_estadio}."
+
+        return True, "Estádio atualizado com sucesso!"
+
+    except Error as erro:
+        return False, f"Erro no banco de dados: {erro}"
+    except Exception as erro:
+        return False, f"Erro de conexão: {erro}"
     finally:
-        if 'conexao' in locals() and conexao.is_connected():
+        if conexao is not None and conexao.is_connected():
             cursor.close()
             conexao.close()
 
 
-
-# delete
+# DELETE
 def deletar_estadio(id_estadio):
+    """Remove um estádio pelo ID. Partidas vinculadas serão removidas em cascata."""
+    conexao = None
     try:
         conexao = conectar()
-        cursor = conexao.cursor()
-        
-        sql = "DELETE FROM estadios WHERE id_estadio = %s"
-        valores = (id_estadio,)
-        
-        cursor.execute(sql, valores)
+        cursor = conexao.cursor(dictionary=True)
+
+        cursor.execute("DELETE FROM estadios WHERE id_estadio = %s", (id_estadio,))
         conexao.commit()
 
         if cursor.rowcount == 0:
-            return False, f"Aviso: Nenhum estadio foi encontrado com este ID {id_estadio}"
-        
-        return True, f"Estádio ID {id_estadio} deletado"
-    
-    # tratamento do erro de integridade referencial
-    except mysql.connector.IntegrityError as err:
-        if err.errno == 1451:
-            return False, "Erro: Este estádio não pode ser excluído porque existem partidas cadastradas nele. Exclua as partidas primeiro."
-        else:
-            return False, f"Erro de integridade: {err}"
-        
-    except Error as err:
-        return False, f"Erro: {err}"
-    
+            return False, f"Nenhum estádio encontrado com o ID {id_estadio}."
+
+        return True, f"Estádio de ID {id_estadio} deletado com sucesso!"
+
+    except mysql.connector.IntegrityError as erro:
+        if erro.errno == 1451:
+            return False, "Este estádio não pode ser excluído pois possui partidas cadastradas nele."
+        return False, f"Erro de integridade: {erro}"
+    except Error as erro:
+        return False, f"Erro no banco de dados: {erro}"
+    except Exception as erro:
+        return False, f"Erro de conexão: {erro}"
     finally:
-        if 'conexao' in locals() and conexao.is_connected(): 
+        if conexao is not None and conexao.is_connected():
             cursor.close()
             conexao.close()
-
-

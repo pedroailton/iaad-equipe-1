@@ -1,8 +1,23 @@
+import sys
 import streamlit as st
-import pandas as pd
 from pathlib import Path
 from streamlit_option_menu import option_menu
 
+# Resolvemos o diretório pai "mysql" e inserimos "cruds" e "interface" no path
+# Isso evita usar "from mysql..." e conflitar com o driver mysql-connector
+mysql_dir = Path(__file__).resolve().parent.parent
+cruds_dir = str(mysql_dir / "cruds")
+interface_dir = str(mysql_dir / "interface")
+
+if cruds_dir not in sys.path:
+    sys.path.insert(0, cruds_dir)
+if interface_dir not in sys.path:
+    sys.path.insert(0, interface_dir)
+
+import conexao
+st.error(f"O ARQUIVO CONEXAO QUE ESTOU RODANDO É: {conexao.__file__}")
+
+# Adiciona o diretório dos CRUDs ao path para importação
 from views.estadios import render_estadios_page
 from views.jogadores import render_jogadores_page
 from views.partidas import render_partidas_page
