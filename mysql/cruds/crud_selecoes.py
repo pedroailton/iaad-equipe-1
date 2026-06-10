@@ -2,30 +2,24 @@ import mysql.connector
 from mysql.connector import Error
 from conexao import conectar
 
-# Posições válidas conforme o banco de dados
-POSICOES_VALIDAS = ["Goleiro", "Defensor", "Meio-campo", "Atacante"]
-
-
 # CREATE
-def inserir_jogador(nome_jogador, posicao, numero_camisa, data_nascimento, id_selecao):
-    """Insere um novo jogador. O ID é gerado automaticamente (AUTO_INCREMENT)."""
+def inserir_selecao(nome_selecao, continente, tecnico, titulos):
+    """Insere uma nova seleção. O ID é gerado automaticamente (AUTO_INCREMENT)."""
     conexao = None
     try:
         conexao = conectar()
         cursor = conexao.cursor(dictionary=True)
 
-        sql = """INSERT INTO jogadores (nome_jogador, posicao, numero_camisa, data_nascimento, id_selecao) 
-                 VALUES (%s, %s, %s, %s, %s)"""
-        cursor.execute(sql, (nome_jogador, posicao, numero_camisa, data_nascimento, id_selecao))
+        sql = """INSERT INTO selecoes (nome_selecao, continente, tecnico, titulos) 
+                 VALUES (%s, %s, %s, %s)"""
+        cursor.execute(sql, (nome_selecao, continente, tecnico, titulos))
         conexao.commit()
 
-        return True, f'Jogador "{nome_jogador}" cadastrado com sucesso!'
+        return True, f'Seleção "{nome_selecao}" adicionada com sucesso!'
 
     except mysql.connector.IntegrityError as erro:
         if erro.errno == 1062:
-            return False, "Já existe um jogador com este ID cadastrado."
-        elif erro.errno == 1452:
-            return False, "A seleção informada não existe no banco de dados."
+            return False, "Já existe uma seleção com este nome cadastrada."
         return False, f"Erro de integridade: {erro}"
     except Error as erro:
         return False, f"Erro no banco de dados: {erro}"
@@ -36,23 +30,16 @@ def inserir_jogador(nome_jogador, posicao, numero_camisa, data_nascimento, id_se
             cursor.close()
             conexao.close()
 
-
 # READ
-def listar_jogadores():
-    """Retorna todos os jogadores com o nome da seleção (JOIN)."""
+def listar_selecoes():
+    """Retorna todas as seleções cadastradas como lista de dicionários."""
     conexao = None
     try:
+        print("chamando conexão")
         conexao = conectar()
         cursor = conexao.cursor(dictionary=True)
 
-        sql = """
-            SELECT j.id_jogador, j.nome_jogador, j.posicao, j.numero_camisa, 
-                   j.data_nascimento, j.id_selecao, s.nome_selecao
-            FROM jogadores j
-            LEFT JOIN selecoes s ON j.id_selecao = s.id_selecao
-            ORDER BY j.id_selecao, j.id_jogador
-        """
-        cursor.execute(sql)
+        cursor.execute("SELECT * FROM selecoes ORDER BY id_selecao")
         resultado = cursor.fetchall()
 
         return True, resultado
@@ -66,10 +53,9 @@ def listar_jogadores():
             cursor.close()
             conexao.close()
 
-
 # UPDATE
-def atualizar_jogador(id_jogador, **campos_atualizar):
-    """Atualiza campos de um jogador. Campos válidos: nome_jogador, posicao, numero_camisa, data_nascimento, id_selecao."""
+def atualizar_selecao(id_selecao, **campos_atualizar):
+    """Atualiza campos de uma seleção. Campos válidos: nome_selecao, continente, tecnico, titulos."""
     if not campos_atualizar:
         return False, "Nenhum campo foi enviado para atualização."
 
@@ -78,7 +64,7 @@ def atualizar_jogador(id_jogador, **campos_atualizar):
         conexao = conectar()
         cursor = conexao.cursor(dictionary=True)
 
-        colunas_validas = ["nome_jogador", "posicao", "numero_camisa", "data_nascimento", "id_selecao"]
+        colunas_validas = ["nome_selecao", "continente", "tecnico", "titulos"]
         partes_set = []
         valores = []
 
@@ -88,23 +74,19 @@ def atualizar_jogador(id_jogador, **campos_atualizar):
                 valores.append(valor)
 
         if not partes_set:
-            return False, "Campos enviados não pertencem à tabela 'jogadores'."
+            return False, "Campos enviados não pertencem à tabela 'selecoes'."
 
-        sql = f"UPDATE jogadores SET {', '.join(partes_set)} WHERE id_jogador = %s"
-        valores.append(id_jogador)
+        sql = f"UPDATE selecoes SET {', '.join(partes_set)} WHERE id_selecao = %s"
+        valores.append(id_selecao)
 
         cursor.execute(sql, tuple(valores))
         conexao.commit()
 
         if cursor.rowcount == 0:
-            return False, f"Nenhum jogador encontrado com o ID {id_jogador}."
+            return False, f"Nenhuma seleção encontrada com o ID {id_selecao}."
 
-        return True, "Jogador atualizado com sucesso!"
+        return True, "Seleção atualizada com sucesso!"
 
-    except mysql.connector.IntegrityError as erro:
-        if erro.errno == 1452:
-            return False, "A seleção informada não existe no banco de dados."
-        return False, f"Erro de integridade: {erro}"
     except Error as erro:
         return False, f"Erro no banco de dados: {erro}"
     except Exception as erro:
@@ -116,21 +98,25 @@ def atualizar_jogador(id_jogador, **campos_atualizar):
 
 
 # DELETE
-def deletar_jogador(id_jogador):
-    """Remove um jogador pelo ID."""
+def deletar_selecao(id_selecao):
+    """Remove uma seleção pelo ID. Jogadores e partidas vinculados serão removidos em cascata."""
     conexao = None
     try:
         conexao = conectar()
         cursor = conexao.cursor(dictionary=True)
 
-        cursor.execute("DELETE FROM jogadores WHERE id_jogador = %s", (id_jogador,))
+        cursor.execute("DELETE FROM selecoes WHERE id_selecao = %s", (id_selecao,))
         conexao.commit()
 
         if cursor.rowcount == 0:
-            return False, f"Nenhum jogador encontrado com o ID {id_jogador}."
+            return False, f"Nenhuma seleção encontrada com o ID {id_selecao}."
 
-        return True, f"Jogador de ID {id_jogador} deletado com sucesso!"
+        return True, f"Seleção de ID {id_selecao} deletada com sucesso!"
 
+    except mysql.connector.IntegrityError as erro:
+        if erro.errno == 1451:
+            return False, "Esta seleção não pode ser excluída pois possui registros dependentes."
+        return False, f"Erro de integridade: {erro}"
     except Error as erro:
         return False, f"Erro no banco de dados: {erro}"
     except Exception as erro:

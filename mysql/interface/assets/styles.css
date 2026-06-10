@@ -1,0 +1,197 @@
+/* Variáveis de Cores e Estilo */
+:root {
+    --primary-color: #EDEEE6;
+    /* Primária: off-white/cinza claro */
+    --secondary-color: #90CE4A;
+    /* Secundária: verde vibrante */
+    --tertiary-color: #161510;
+    /* Terciária: escuro/quase preto */
+
+    --primary-dark: var(--tertiary-color);
+    --green-grass: var(--secondary-color);
+    --light-green: #a3db5e;
+    /* Hover do botão verde */
+    --white: #FFFFFF;
+    --bg-color: var(--primary-color);
+}
+
+/* Fundo da aplicação */
+.stApp {
+    background-color: var(--bg-color);
+    color: var(--primary-dark);
+}
+
+/* Contraste geral do conteúdo textual */
+.stApp h1,
+.stApp h2,
+.stApp h3,
+.stApp h4,
+.stApp h5,
+.stApp h6,
+.stApp p,
+.stApp span,
+.stApp label,
+.stApp li,
+.stApp div[data-testid="stMarkdownContainer"] {
+    color: var(--primary-dark);
+}
+
+.stApp h3 {
+    font-size: 24px;
+}
+
+.stApp p {
+    font-size: 12px;
+}
+
+/* Sidebar com texto legível */
+[data-testid="stSidebar"] {
+    color: var(--white) !important;
+}
+
+[data-testid="stSidebar"] * {
+    color: var(--white) !important;
+}
+
+[data-testid="stSidebar"] .stCaption {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+[data-testid="stSidebar"] hr {
+    border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+/* Estilização dos inputs (border-radius) */
+div[data-baseweb="input"]>div,
+div[data-baseweb="select"]>div,
+input[type="number"],
+input[type="date"] {
+    border-radius: 8px !important;
+    border: 1px solid #CBD5E1 !important;
+    background-color: var(--white) !important;
+}
+
+/* Estilização dos Botões primários */
+button[kind="primary"] {
+    background-color: var(--green-grass) !important;
+    color: var(--primary-dark) !important;
+    /* Texto escuro para contraste no botão verde claro */
+    border-radius: 8px !important;
+    border: none !important;
+    font-weight: bold !important;
+    transition: all 0.3s ease-in-out;
+}
+
+button[kind="primary"]:hover {
+    background-color: var(--light-green) !important;
+    box-shadow: 0 4px 8px rgba(144, 206, 74, 0.3) !important;
+    transform: translateY(-2px);
+}
+
+/* Cards visuais customizados via markdown */
+.custom-card {
+    background-color: var(--white);
+    padding-left: 20px;
+    padding-right: 20px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    border-left: 5px solid var(--green-grass);
+    height: auto;
+    margin-bottom: 20px;
+}
+
+.custom-card h3,
+.custom-card p {
+    color: var(--primary-dark);
+}
+
+/* Ajuste de abas (Tabs) */
+button[data-baseweb="tab"] {
+    font-weight: 600;
+}
+
+/* Oculta APENAS o botão nativo de "Deploy" */
+.stDeployButton {
+    display: none !important;
+}
+
+/* Mantém a toolbar do Streamlit visível para não esconder o botão da sidebar */
+[data-testid="stToolbar"] {
+    visibility: visible !important;
+}
+
+/* Oculta o rodapé "Made with Streamlit" */
+footer {
+    display: none !important;
+}
+
+/* Oculta o novo contêiner de rodapé (Streamlit 1.30+) */
+[data-testid="stBottomBlock"] {
+    display: none !important;
+}
+
+/* Remove margens e padding excessivos do container principal */
+.block-container {
+    padding-top: 1rem !important;
+    /* substitui o padrão 6rem (96px) */
+    padding-bottom: 1rem !important;
+    /* substitui o padrão 10rem (160px) */
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+    max-width: 100% !important;
+    width: 100% !important;
+}
+
+/* Oculta o cabeçalho padrão e a barra de decoração superior do Streamlit */
+[data-testid="stHeader"] {
+    display: none !important;
+}
+
+[data-testid="stDecoration"] {
+    display: none !important;
+}
+
+/* Espaçamento vertical entre todos os blocos: máx ~8px de gap */
+.stVerticalBlock {
+    gap: 0.5rem !important;
+    /* 8px — mantém todos os espaços abaixo de 50px */
+}
+
+/* Zera margens individuais de cada widget */
+.element-container {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+/* Dataframe: largura total, sem padding/margin extras */
+[data-testid="stDataFrame"] {
+    zoom: 0.7;
+    width: 100% !important;
+    align-items: center !important;
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+[data-testid="stElementToolbar"] {
+    margin: 0 auto !important;
+    display: flex !important;
+    justify-content: center !important;
+}
+
+[data-testid="stDataFrame"]>div {
+    width: 100% !important;
+    margin: 0 auto !important;
+}
+
+[data-testid="stDataFrameResizable"] {
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+    height: 100% !important;
+}
+
+/* Caption imediatamente abaixo do dataframe */
+[data-testid="stCaptionContainer"] {
+    margin-top: -0.5rem !important;
+}

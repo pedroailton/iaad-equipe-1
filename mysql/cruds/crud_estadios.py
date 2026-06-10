@@ -2,30 +2,24 @@ import mysql.connector
 from mysql.connector import Error
 from conexao import conectar
 
-# Posições válidas conforme o banco de dados
-POSICOES_VALIDAS = ["Goleiro", "Defensor", "Meio-campo", "Atacante"]
-
 
 # CREATE
-def inserir_jogador(nome_jogador, posicao, numero_camisa, data_nascimento, id_selecao):
-    """Insere um novo jogador. O ID é gerado automaticamente (AUTO_INCREMENT)."""
-    conexao = None
+def inserir_estadio(nome_estadio, cidade, pais, capacidade):
+    """Insere um novo estádio. O ID é gerado automaticamente (AUTO_INCREMENT)."""
     try:
         conexao = conectar()
         cursor = conexao.cursor(dictionary=True)
 
-        sql = """INSERT INTO jogadores (nome_jogador, posicao, numero_camisa, data_nascimento, id_selecao) 
-                 VALUES (%s, %s, %s, %s, %s)"""
-        cursor.execute(sql, (nome_jogador, posicao, numero_camisa, data_nascimento, id_selecao))
+        sql = """INSERT INTO estadios (nome_estadio, cidade, pais, capacidade) 
+                 VALUES (%s, %s, %s, %s)"""
+        cursor.execute(sql, (nome_estadio, cidade, pais, capacidade))
         conexao.commit()
 
-        return True, f'Jogador "{nome_jogador}" cadastrado com sucesso!'
+        return True, f'Estádio "{nome_estadio}" cadastrado com sucesso!'
 
     except mysql.connector.IntegrityError as erro:
         if erro.errno == 1062:
-            return False, "Já existe um jogador com este ID cadastrado."
-        elif erro.errno == 1452:
-            return False, "A seleção informada não existe no banco de dados."
+            return False, "Já existe um estádio com este ID cadastrado."
         return False, f"Erro de integridade: {erro}"
     except Error as erro:
         return False, f"Erro no banco de dados: {erro}"
@@ -38,21 +32,14 @@ def inserir_jogador(nome_jogador, posicao, numero_camisa, data_nascimento, id_se
 
 
 # READ
-def listar_jogadores():
-    """Retorna todos os jogadores com o nome da seleção (JOIN)."""
+def listar_estadios():
+    """Retorna todos os estádios cadastrados como lista de dicionários."""
     conexao = None
     try:
         conexao = conectar()
         cursor = conexao.cursor(dictionary=True)
 
-        sql = """
-            SELECT j.id_jogador, j.nome_jogador, j.posicao, j.numero_camisa, 
-                   j.data_nascimento, j.id_selecao, s.nome_selecao
-            FROM jogadores j
-            LEFT JOIN selecoes s ON j.id_selecao = s.id_selecao
-            ORDER BY j.id_selecao, j.id_jogador
-        """
-        cursor.execute(sql)
+        cursor.execute("SELECT * FROM estadios ORDER BY id_estadio")
         resultado = cursor.fetchall()
 
         return True, resultado
@@ -68,8 +55,8 @@ def listar_jogadores():
 
 
 # UPDATE
-def atualizar_jogador(id_jogador, **campos_atualizar):
-    """Atualiza campos de um jogador. Campos válidos: nome_jogador, posicao, numero_camisa, data_nascimento, id_selecao."""
+def atualizar_estadio(id_estadio, **campos_atualizar):
+    """Atualiza campos de um estádio. Campos válidos: nome_estadio, cidade, pais, capacidade."""
     if not campos_atualizar:
         return False, "Nenhum campo foi enviado para atualização."
 
@@ -78,7 +65,7 @@ def atualizar_jogador(id_jogador, **campos_atualizar):
         conexao = conectar()
         cursor = conexao.cursor(dictionary=True)
 
-        colunas_validas = ["nome_jogador", "posicao", "numero_camisa", "data_nascimento", "id_selecao"]
+        colunas_validas = ["nome_estadio", "cidade", "pais", "capacidade"]
         partes_set = []
         valores = []
 
@@ -88,23 +75,19 @@ def atualizar_jogador(id_jogador, **campos_atualizar):
                 valores.append(valor)
 
         if not partes_set:
-            return False, "Campos enviados não pertencem à tabela 'jogadores'."
+            return False, "Campos enviados não pertencem à tabela 'estadios'."
 
-        sql = f"UPDATE jogadores SET {', '.join(partes_set)} WHERE id_jogador = %s"
-        valores.append(id_jogador)
+        sql = f"UPDATE estadios SET {', '.join(partes_set)} WHERE id_estadio = %s"
+        valores.append(id_estadio)
 
         cursor.execute(sql, tuple(valores))
         conexao.commit()
 
         if cursor.rowcount == 0:
-            return False, f"Nenhum jogador encontrado com o ID {id_jogador}."
+            return False, f"Nenhum estádio encontrado com o ID {id_estadio}."
 
-        return True, "Jogador atualizado com sucesso!"
+        return True, "Estádio atualizado com sucesso!"
 
-    except mysql.connector.IntegrityError as erro:
-        if erro.errno == 1452:
-            return False, "A seleção informada não existe no banco de dados."
-        return False, f"Erro de integridade: {erro}"
     except Error as erro:
         return False, f"Erro no banco de dados: {erro}"
     except Exception as erro:
@@ -116,21 +99,25 @@ def atualizar_jogador(id_jogador, **campos_atualizar):
 
 
 # DELETE
-def deletar_jogador(id_jogador):
-    """Remove um jogador pelo ID."""
+def deletar_estadio(id_estadio):
+    """Remove um estádio pelo ID. Partidas vinculadas serão removidas em cascata."""
     conexao = None
     try:
         conexao = conectar()
         cursor = conexao.cursor(dictionary=True)
 
-        cursor.execute("DELETE FROM jogadores WHERE id_jogador = %s", (id_jogador,))
+        cursor.execute("DELETE FROM estadios WHERE id_estadio = %s", (id_estadio,))
         conexao.commit()
 
         if cursor.rowcount == 0:
-            return False, f"Nenhum jogador encontrado com o ID {id_jogador}."
+            return False, f"Nenhum estádio encontrado com o ID {id_estadio}."
 
-        return True, f"Jogador de ID {id_jogador} deletado com sucesso!"
+        return True, f"Estádio de ID {id_estadio} deletado com sucesso!"
 
+    except mysql.connector.IntegrityError as erro:
+        if erro.errno == 1451:
+            return False, "Este estádio não pode ser excluído pois possui partidas cadastradas nele."
+        return False, f"Erro de integridade: {erro}"
     except Error as erro:
         return False, f"Erro no banco de dados: {erro}"
     except Exception as erro:
