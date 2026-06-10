@@ -114,10 +114,7 @@ def deletar_estadio(id_estadio):
 
         return True, f"Estádio de ID {id_estadio} deletado com sucesso!"
 
-    except mysql.connector.IntegrityError as erro:
-        if erro.errno == 1451:
-            return False, "Este estádio não pode ser excluído pois possui partidas cadastradas nele."
-        return False, f"Erro de integridade: {erro}"
+    
     except Error as erro:
         return False, f"Erro no banco de dados: {erro}"
     except Exception as erro:
