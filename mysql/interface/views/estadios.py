@@ -9,27 +9,33 @@ def render_estadios_page():
     st.markdown('<div class="custom-card"><h3>🏟️ Gestão de Estádios</h3><p>Administre as arenas sede da Copa do Mundo 2026 (EUA, México e Canadá).</p></div>', unsafe_allow_html=True)
 
     # Visualização sempre visível no topo
-    sucesso, dados = crud_estadios.listar_estadios()
-    if sucesso and dados:
-        df = pd.DataFrame(dados)
-        st.dataframe(
-            df,
-            use_container_width=True,
-            hide_index=True,
-            height=TABLE_HEIGHT,
-            column_config={
-                "id_estadio":   st.column_config.NumberColumn("ID",         format="%d"),
-                "nome_estadio": st.column_config.TextColumn("Estádio"),
-                "cidade":       st.column_config.TextColumn("Cidade"),
-                "pais":         st.column_config.TextColumn("País"),
-                "capacidade":   st.column_config.NumberColumn("Capacidade", format="%d"),
-            }
-        )
-        st.caption(f"Total: {len(df)} estádio(s)")
-    elif sucesso and not dados:
-        st.info("Nenhum estádio cadastrado.")
-    else:
-        st.error(f"❌ {dados}")
+    table_placeholder = st.empty()
+
+    def atualizar_tabela():
+        sucesso, dados = crud_estadios.listar_estadios()
+        with table_placeholder.container():
+            if sucesso and dados:
+                df = pd.DataFrame(dados)
+                st.dataframe(
+                    df,
+                    use_container_width=True,
+                    hide_index=True,
+                    height=TABLE_HEIGHT,
+                    column_config={
+                        "id_estadio":   st.column_config.NumberColumn("ID",         format="%d"),
+                        "nome_estadio": st.column_config.TextColumn("Estádio"),
+                        "cidade":       st.column_config.TextColumn("Cidade"),
+                        "pais":         st.column_config.TextColumn("País"),
+                        "capacidade":   st.column_config.NumberColumn("Capacidade", format="%d"),
+                    }
+                )
+                st.caption(f"Total: {len(df)} estádio(s)")
+            elif sucesso and not dados:
+                st.info("Nenhum estádio cadastrado.")
+            else:
+                st.error(f"❌ {dados}")
+
+    atualizar_tabela()
 
     tab_create, tab_update, tab_delete = st.tabs(["➕ Cadastrar", "✏️ Atualizar", "🗑️ Remover"])
 
@@ -52,6 +58,7 @@ def render_estadios_page():
                     ok, msg = crud_estadios.inserir_estadio(nome_est, cidade, pais, int(capacidade))
                     if ok:
                         st.success(f"✅ {msg}")
+                        atualizar_tabela()
                     else:
                         st.error(f"❌ {msg}")
 
@@ -83,6 +90,7 @@ def render_estadios_page():
                     ok, msg = crud_estadios.atualizar_estadio(int(id_est), **campos)
                     if ok:
                         st.success(f"✅ {msg}")
+                        atualizar_tabela()
                     else:
                         st.error(f"❌ {msg}")
 
@@ -94,5 +102,6 @@ def render_estadios_page():
             ok, msg = crud_estadios.deletar_estadio(int(id_est))
             if ok:
                 st.success(f"✅ {msg}")
+                atualizar_tabela()
             else:
                 st.error(f"❌ {msg}")

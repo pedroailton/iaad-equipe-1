@@ -17,8 +17,8 @@ if interface_dir not in sys.path:
 if raiz_dir not in sys.path:
     sys.path.insert(0, raiz_dir)
 
-import conexao
-st.error(f"O ARQUIVO CONEXAO QUE ESTOU RODANDO É: {conexao.__file__}")
+# import conexao
+# st.error(f"O ARQUIVO CONEXAO QUE ESTOU RODANDO É: {conexao.__file__}")
 
 # Adiciona o diretório dos CRUDs ao path para importação
 from views.estadios import render_estadios_page
