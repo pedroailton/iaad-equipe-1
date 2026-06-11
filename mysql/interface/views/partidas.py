@@ -10,30 +10,36 @@ def render_partidas_page():
     st.markdown('<div class="custom-card"><h3>📅 Gestão de Partidas</h3><p>Controle a tabela de jogos e resultados da Copa do Mundo 2026.</p></div>', unsafe_allow_html=True)
 
     # Visualização sempre visível no topo
-    sucesso, dados = crud_partidas.listar_partidas()
-    if sucesso and dados:
-        df = pd.DataFrame(dados)
-        st.dataframe(
-            df,
-            use_container_width=True,
-            hide_index=True,
-            height=TABLE_HEIGHT,
-            column_config={
-                "id_partida":                st.column_config.NumberColumn("ID",           format="%d"),
-                "data_partida":              st.column_config.DateColumn("Data",           format="DD/MM/YYYY"),
-                "nome_estadio":              st.column_config.TextColumn("Estádio"),
-                "selecao_1":                 st.column_config.TextColumn("Seleção 1"),
-                "selecao_2":                 st.column_config.TextColumn("Seleção 2"),
-                "quantidade_gols_selecao_1": st.column_config.NumberColumn("Gols 1",       format="%d"),
-                "quantidade_gols_selecao_2": st.column_config.NumberColumn("Gols 2",       format="%d"),
-                "vencedor":                  st.column_config.TextColumn("Vencedor"),
-            }
-        )
-        st.caption(f"Total: {len(df)} partida(s) | Vencedor vazio = empate")
-    elif sucesso and not dados:
-        st.info("Nenhuma partida cadastrada.")
-    else:
-        st.error(f"❌ {dados}")
+    table_placeholder = st.empty()
+
+    def atualizar_tabela():
+        sucesso, dados = crud_partidas.listar_partidas()
+        with table_placeholder.container():
+            if sucesso and dados:
+                df = pd.DataFrame(dados)
+                st.dataframe(
+                    df,
+                    use_container_width=True,
+                    hide_index=True,
+                    height=TABLE_HEIGHT,
+                    column_config={
+                        "id_partida":                st.column_config.NumberColumn("ID",           format="%d"),
+                        "data_partida":              st.column_config.DateColumn("Data",           format="DD/MM/YYYY"),
+                        "nome_estadio":              st.column_config.TextColumn("Estádio"),
+                        "selecao_1":                 st.column_config.TextColumn("Seleção 1"),
+                        "selecao_2":                 st.column_config.TextColumn("Seleção 2"),
+                        "quantidade_gols_selecao_1": st.column_config.NumberColumn("Gols 1",       format="%d"),
+                        "quantidade_gols_selecao_2": st.column_config.NumberColumn("Gols 2",       format="%d"),
+                        "vencedor":                  st.column_config.TextColumn("Vencedor"),
+                    }
+                )
+                st.caption(f"Total: {len(df)} partida(s) | Vencedor vazio = empate")
+            elif sucesso and not dados:
+                st.info("Nenhuma partida cadastrada.")
+            else:
+                st.error(f"❌ {dados}")
+
+    atualizar_tabela()
 
     tab_create, tab_update, tab_delete = st.tabs(["➕ Cadastrar", "✏️ Atualizar", "🗑️ Remover"])
 
@@ -71,6 +77,7 @@ def render_partidas_page():
                 )
                 if ok:
                     st.success(f"✅ {msg}")
+                    atualizar_tabela()
                 else:
                     st.error(f"❌ {msg}")
 
@@ -120,6 +127,7 @@ def render_partidas_page():
                     ok, msg = crud_partidas.atualizar_partida(int(id_partida), **campos)
                     if ok:
                         st.success(f"✅ {msg}")
+                        atualizar_tabela()
                     else:
                         st.error(f"❌ {msg}")
 
@@ -130,5 +138,6 @@ def render_partidas_page():
             ok, msg = crud_partidas.deletar_partida(int(id_partida))
             if ok:
                 st.success(f"✅ {msg}")
+                atualizar_tabela()
             else:
                 st.error(f"❌ {msg}")

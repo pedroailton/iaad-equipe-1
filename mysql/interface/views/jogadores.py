@@ -10,29 +10,35 @@ def render_jogadores_page():
     st.markdown('<div class="custom-card"><h3>🏃 Gestão de Jogadores</h3><p>Controle o elenco de cada seleção.</p></div>', unsafe_allow_html=True)
 
     # Visualização sempre visível no topo
-    sucesso, dados = crud_jogadores.listar_jogadores()
-    if sucesso and dados:
-        df = pd.DataFrame(dados)
-        st.dataframe(
-            df,
-            use_container_width=True,
-            hide_index=True,
-            height=TABLE_HEIGHT,
-            column_config={
-                "id_jogador":      st.column_config.NumberColumn("ID",              format="%d"),
-                "nome_jogador":    st.column_config.TextColumn("Nome do Jogador"),
-                "posicao":         st.column_config.TextColumn("Posição"),
-                "numero_camisa":   st.column_config.NumberColumn("Camisa",          format="%d"),
-                "data_nascimento": st.column_config.DateColumn("Nascimento",        format="DD/MM/YYYY"),
-                "id_selecao":      st.column_config.NumberColumn("ID Seleção",      format="%d"),
-                "nome_selecao":    st.column_config.TextColumn("Seleção"),
-            }
-        )
-        st.caption(f"Total: {len(df)} jogador(es) | Posições válidas: {', '.join(crud_jogadores.POSICOES_VALIDAS)}")
-    elif sucesso and not dados:
-        st.info("Nenhum jogador cadastrado.")
-    else:
-        st.error(f"❌ {dados}")
+    table_placeholder = st.empty()
+
+    def atualizar_tabela():
+        sucesso, dados = crud_jogadores.listar_jogadores()
+        with table_placeholder.container():
+            if sucesso and dados:
+                df = pd.DataFrame(dados)
+                st.dataframe(
+                    df,
+                    use_container_width=True,
+                    hide_index=True,
+                    height=TABLE_HEIGHT,
+                    column_config={
+                        "id_jogador":      st.column_config.NumberColumn("ID",              format="%d"),
+                        "nome_jogador":    st.column_config.TextColumn("Nome do Jogador"),
+                        "posicao":         st.column_config.TextColumn("Posição"),
+                        "numero_camisa":   st.column_config.NumberColumn("Camisa",          format="%d"),
+                        "data_nascimento": st.column_config.DateColumn("Nascimento",        format="DD/MM/YYYY"),
+                        "id_selecao":      st.column_config.NumberColumn("ID Seleção",      format="%d"),
+                        "nome_selecao":    st.column_config.TextColumn("Seleção"),
+                    }
+                )
+                st.caption(f"Total: {len(df)} jogador(es) | Posições válidas: {', '.join(crud_jogadores.POSICOES_VALIDAS)}")
+            elif sucesso and not dados:
+                st.info("Nenhum jogador cadastrado.")
+            else:
+                st.error(f"❌ {dados}")
+
+    atualizar_tabela()
 
     tab_create, tab_update, tab_delete = st.tabs(["➕ Cadastrar", "✏️ Atualizar", "🗑️ Remover"])
 
@@ -57,6 +63,7 @@ def render_jogadores_page():
                     ok, msg = crud_jogadores.inserir_jogador(nome_jog, posicao, int(camisa), data_nasc, int(id_sel))
                     if ok:
                         st.success(f"✅ {msg}")
+                        atualizar_tabela()
                     else:
                         st.error(f"❌ {msg}")
 
@@ -92,6 +99,7 @@ def render_jogadores_page():
                     ok, msg = crud_jogadores.atualizar_jogador(int(id_jog), **campos)
                     if ok:
                         st.success(f"✅ {msg}")
+                        atualizar_tabela()
                     else:
                         st.error(f"❌ {msg}")
 
@@ -102,5 +110,6 @@ def render_jogadores_page():
             ok, msg = crud_jogadores.deletar_jogador(int(id_jog))
             if ok:
                 st.success(f"✅ {msg}")
+                atualizar_tabela()
             else:
                 st.error(f"❌ {msg}")

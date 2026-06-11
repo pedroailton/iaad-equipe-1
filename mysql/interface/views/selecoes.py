@@ -9,27 +9,33 @@ def render_selecoes_page():
     st.markdown('<div class="custom-card"><h3>Gestão de Seleções</h3><p>Administre as seleções participantes da Copa do Mundo 2026.</p></div>', unsafe_allow_html=True)
 
     # Visualização sempre visível no topo
-    sucesso, dados = crud_selecoes.listar_selecoes()
-    if sucesso and dados:
-        df = pd.DataFrame(dados)
-        st.dataframe(
-            df,
-            use_container_width=True,
-            hide_index=True,
-            height=TABLE_HEIGHT,
-            column_config={
-                "id_selecao":   st.column_config.NumberColumn("ID",               format="%d"),
-                "nome_selecao": st.column_config.TextColumn("Seleção"),
-                "continente":   st.column_config.TextColumn("Continente"),
-                "tecnico":      st.column_config.TextColumn("Técnico"),
-                "titulos":      st.column_config.NumberColumn("Títulos Mundiais", format="%d"),
-            }
-        )
-        st.caption(f"Total: {len(df)} seleção(ões)")
-    elif sucesso and not dados:
-        st.info("Nenhuma seleção cadastrada.")
-    else:
-        st.error(f"❌ {dados}")
+    table_placeholder = st.empty()
+
+    def atualizar_tabela():
+        sucesso, dados = crud_selecoes.listar_selecoes()
+        with table_placeholder.container():
+            if sucesso and dados:
+                df = pd.DataFrame(dados)
+                st.dataframe(
+                    df,
+                    use_container_width=True,
+                    hide_index=True,
+                    height=TABLE_HEIGHT,
+                    column_config={
+                        "id_selecao":   st.column_config.NumberColumn("ID",               format="%d"),
+                        "nome_selecao": st.column_config.TextColumn("Seleção"),
+                        "continente":   st.column_config.TextColumn("Continente"),
+                        "tecnico":      st.column_config.TextColumn("Técnico"),
+                        "titulos":      st.column_config.NumberColumn("Títulos Mundiais", format="%d"),
+                    }
+                )
+                st.caption(f"Total: {len(df)} seleção(ões)")
+            elif sucesso and not dados:
+                st.info("Nenhuma seleção cadastrada.")
+            else:
+                st.error(f"❌ {dados}")
+
+    atualizar_tabela()
 
     tab_create, tab_update, tab_delete = st.tabs(["➕ Cadastrar", "✏️ Atualizar", "🗑️ Remover"])
 
@@ -51,6 +57,7 @@ def render_selecoes_page():
                     ok, msg = crud_selecoes.inserir_selecao(nome_sel, continente, tecnico, int(titulos))
                     if ok:
                         st.success(f"✅ {msg}")
+                        atualizar_tabela()
                     else:
                         st.error(f"❌ {msg}")
 
@@ -83,6 +90,7 @@ def render_selecoes_page():
                     ok, msg = crud_selecoes.atualizar_selecao(int(id_sel), **campos)
                     if ok:
                         st.success(f"✅ {msg}")
+                        atualizar_tabela()
                     else:
                         st.error(f"❌ {msg}")
 
@@ -94,5 +102,6 @@ def render_selecoes_page():
             ok, msg = crud_selecoes.deletar_selecao(int(id_sel))
             if ok:
                 st.success(f"✅ {msg}")
+                atualizar_tabela()
             else:
                 st.error(f"❌ {msg}")
