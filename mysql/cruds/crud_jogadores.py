@@ -28,6 +28,8 @@ def inserir_jogador(nome_jogador, posicao, numero_camisa, data_nascimento, id_se
             return False, "A seleção informada não existe no banco de dados."
         return False, f"Erro de integridade: {erro}"
     except Error as erro:
+        if erro.sqlstate == '45000':
+            return False, erro.msg
         return False, f"Erro no banco de dados: {erro}"
     except Exception as erro:
         return False, f"Erro de conexão: {erro}"
@@ -106,6 +108,8 @@ def atualizar_jogador(id_jogador, **campos_atualizar):
             return False, "A seleção informada não existe no banco de dados."
         return False, f"Erro de integridade: {erro}"
     except Error as erro:
+        if erro.sqlstate == '45000':
+            return False, erro.msg
         return False, f"Erro no banco de dados: {erro}"
     except Exception as erro:
         return False, f"Erro de conexão: {erro}"

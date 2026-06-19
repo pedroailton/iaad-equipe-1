@@ -103,3 +103,39 @@ ENGINE = InnoDB;
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
+
+-- -----------------------------------------------------
+-- Triggers de Validação
+-- -----------------------------------------------------
+
+DELIMITER $$
+
+-- Trigger para validar camisa no INSERT
+CREATE TRIGGER trg_verificar_camisa_insert
+BEFORE INSERT ON `Copa do Mundo de Futebol`.`jogadores`
+FOR EACH ROW
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM `Copa do Mundo de Futebol`.`jogadores` 
+        WHERE id_selecao = NEW.id_selecao AND numero_camisa = NEW.numero_camisa
+    ) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Esta camisa já está em uso nesta seleção.';
+    END IF;
+END$$
+
+-- Trigger para validar camisa no UPDATE
+CREATE TRIGGER trg_verificar_camisa_update
+BEFORE UPDATE ON `Copa do Mundo de Futebol`.`jogadores`
+FOR EACH ROW
+BEGIN
+    IF NEW.numero_camisa != OLD.numero_camisa OR NEW.id_selecao != OLD.id_selecao THEN
+        IF EXISTS (
+            SELECT 1 FROM `Copa do Mundo de Futebol`.`jogadores` 
+            WHERE id_selecao = NEW.id_selecao AND numero_camisa = NEW.numero_camisa
+        ) THEN
+            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Esta camisa já está em uso nesta seleção.';
+        END IF;
+    END IF;
+END$$
+
+DELIMITER ;
