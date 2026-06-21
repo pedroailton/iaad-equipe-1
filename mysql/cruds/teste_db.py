@@ -9,7 +9,8 @@ try:
         host="localhost",
         user="root",
         password="80ai089d", # Senha direta para testar
-        database="Copa do Mundo de Futebol"
+        database="Copa do Mundo de Futebol",
+        use_pure=True
     )
     print("2. CONEXÃO BEM SUCEDIDA!")
     conexao.close()

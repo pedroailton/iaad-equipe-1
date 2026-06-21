@@ -17,7 +17,8 @@ def conectar():
             host="localhost",
             user="root",
             password="80ai089d",
-            database="Copa do Mundo de Futebol"
+            database="Copa do Mundo de Futebol",
+            use_pure=True
         )
         print("-> CONEXÃO BEM SUCEDIDA!")
         return conexao
