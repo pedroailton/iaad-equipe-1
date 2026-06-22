@@ -16,7 +16,6 @@
 | Clara Helena Souza da Silva |
 | Igor Dias Vieira |
 | Gabryel Gomes Silva Souza |
-| Felipe Cavalcante Santos |
 | Maria Eduarda Alves dos Santos |
 
 ---
